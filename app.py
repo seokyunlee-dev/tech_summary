@@ -14,21 +14,15 @@ RECIPIENT_EMAIL = os.getenv("RECIPIENT_EMAIL")
 def generate_newsletter():
     client = genai.Client(api_key=GEMINI_API_KEY)
     
-    # [추가] 사용 가능한 모델 목록 확인 및 로깅
-    print("Checking available models...")
+    # [수정] 현재 리스트에서 확인된 최강 모델인 2.5-pro를 우선 사용합니다.
     available_models = [m.name for m in client.models.list()]
-    print(f"Available models: {available_models}")
+    target_model_name = "models/gemini-2.5-pro"
     
-    # 가장 적합한 모델 선택 (1.5-flash 우선, 없으면 첫 번째 gemini 모델)
-    target_model_name = "models/gemini-1.5-flash"
     if target_model_name not in available_models:
-        # 목록에서 'gemini'가 포함된 모델 중 가장 최신인 듯한 것 선택
-        gemini_models = [m for m in available_models if "gemini" in m.lower()]
-        if gemini_models:
-            target_model_name = gemini_models[0]
-            print(f"Target model not found. Falling back to: {target_model_name}")
-        else:
-            print("No Gemini models found at all. Please check your API key.")
+        # 2.5-pro가 없다면 리스트 중 가장 좋은 pro 모델을 찾습니다.
+        pro_models = [m for m in available_models if "pro" in m.lower()]
+        target_model_name = pro_models[0] if pro_models else available_models[0]
+        print(f"Preferred model not found. Falling back to: {target_model_name}")
     
     # 실행 시점의 현재 날짜와 시각을 가져옵니다.
     now = datetime.now()
@@ -39,22 +33,27 @@ def generate_newsletter():
     반드시 실시간 검색을 통해, **정확히 지난 24시간 전(어제 이 시간)부터 현재({today_str})까지** 글로벌 개발자 생태계(GitHub Trending, Hacker News, Product Hunt, Reddit)에서 가장 뜨겁게 논의되고 있는 최신 IT 기술 및 오픈소스 트렌드를 분석해 뉴스레터 형태로 작성해 주세요.
 
     [필수 제약 조건]
-    1. 분석 범위: 반드시 지난 24시간 이내의 데이터만 포함하세요. 그 이전의 오래된 뉴스는 제외하세요.
+    1. 분석 범위: 지난 24시간 이내의 데이터만 포함하고, 각 항목마다 반드시 **참고한 소스 링크(URL)**를 포함하세요.
     2. 메일 전용 포맷: 인사말 없이 곧바로 [제목]부터 출력하세요.
     3. 무조건적인 솔직함: 기술의 한계점과 단점을 냉정하게 지적하세요.
     4. 가독성: 마크다운 문법을 활용하여 볼드 가공과 줄바꿈을 확실히 하세요.
     5. 기준 일시 명시: 제목에 분석 기준 시점({today_str})을 포함하세요.
 
     [출력 양식]
-    제목: 🚀 [Tech Pulse] {today_str} 기준 지난 24시간 테크 리포트
+    제목: 🚀 [Tech Pulse] {today_str} 기준 지난 24시간 테크 리포트 (Powered by 2.5 Pro)
     ---
     ### 짚고 넘어가야 할 최신 기술 3선
-    ■ 1. [기술명] (요약, 활용처, 장점, 단점)
-    ■ 2. [기술명]
-    ■ 3. [기술명]
+    ■ 1. [기술명]
+    - 요약: 
+    - 활용처: 
+    - 장점/단점: 
+    - **소스 링크**: [URL]
+    
+    ■ 2. [기술명] ... (위와 동일)
+    ■ 3. [기술명] ... (위와 동일)
     ---
     ### 핵심 인프라 및 언어 업데이트
-    ■ 4. 메이저 배포 소식 (1~2개)
+    ■ 4. 메이저 배포 소식 및 소스 링크
     ---
     ### 5초 테크 지식 충전
     ■ 5. 오늘의 테크 용어 사전
