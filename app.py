@@ -14,14 +14,14 @@ RECIPIENT_EMAIL = os.getenv("RECIPIENT_EMAIL")
 def generate_newsletter():
     client = genai.Client(api_key=GEMINI_API_KEY)
     
-    # [수정] 현재 리스트에서 확인된 최강 모델인 2.5-pro를 우선 사용합니다.
+    # [수정] Pro 모델의 한도 부족(429) 문제를 피하기 위해, 무료 한도가 넉넉한 2.5-flash를 사용합니다.
     available_models = [m.name for m in client.models.list()]
-    target_model_name = "models/gemini-2.5-pro"
+    target_model_name = "models/gemini-2.5-flash"
     
     if target_model_name not in available_models:
-        # 2.5-pro가 없다면 리스트 중 가장 좋은 pro 모델을 찾습니다.
-        pro_models = [m for m in available_models if "pro" in m.lower()]
-        target_model_name = pro_models[0] if pro_models else available_models[0]
+        # 2.5-flash가 없다면 목록 중 첫 번째 gemini 모델을 찾습니다.
+        gemini_models = [m for m in available_models if "gemini" in m.lower()]
+        target_model_name = gemini_models[0] if gemini_models else available_models[0]
         print(f"Preferred model not found. Falling back to: {target_model_name}")
     
     # 실행 시점의 현재 날짜와 시각을 가져옵니다.
