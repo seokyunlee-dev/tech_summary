@@ -2,7 +2,7 @@ import os
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-import google.generativeai as genai
+from google import genai
 from datetime import datetime
 
 # 1. 환경 변수 로드 (GitHub Secrets 사용 전제)
@@ -12,8 +12,7 @@ GMAIL_PASSWORD = os.getenv("GMAIL_PASSWORD") # Gmail 앱 비밀번호
 RECIPIENT_EMAIL = os.getenv("RECIPIENT_EMAIL")
 
 def generate_newsletter():
-    genai.configure(api_key=GEMINI_API_KEY)
-    model = genai.GenerativeModel('gemini-1.5-flash')
+    client = genai.Client(api_key=GEMINI_API_KEY)
     
     # 실행 시점의 현재 날짜와 시각을 가져옵니다.
     now = datetime.now()
@@ -45,7 +44,10 @@ def generate_newsletter():
     ■ 5. 오늘의 테크 용어 사전
     """
 
-    response = model.generate_content(prompt)
+    response = client.models.generate_content(
+        model="gemini-1.5-flash",
+        contents=prompt
+    )
     return response.text
 
 def send_email(content):
