@@ -3,6 +3,7 @@ import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from google import genai
+from google.genai import types
 from datetime import datetime
 
 # 1. 환경 변수 로드 (GitHub Secrets 사용 전제)
@@ -30,17 +31,18 @@ def generate_newsletter():
 
     prompt = f"""
     현재 시점은 {today_str}입니다. 당신은 실리콘밸리의 탑티어 테크 인사이더이자 냉철한 기술 분석가입니다. 
-    반드시 실시간 검색을 통해, **정확히 지난 24시간 전(어제 이 시간)부터 현재({today_str})까지** 글로벌 개발자 생태계(GitHub Trending, Hacker News, Product Hunt, Reddit)에서 가장 뜨겁게 논의되고 있는 최신 IT 기술 및 오픈소스 트렌드를 분석해 뉴스레터 형태로 작성해 주세요.
+    반드시 제공된 'Google Search' 도구를 사용하여 실시간으로 검색을 수행하고, **정확히 지난 24시간 전(어제 이 시간)부터 현재({today_str})까지** 글로벌 개발자 생태계(GitHub Trending, Hacker News, Product Hunt, Reddit)에서 가장 뜨겁게 논의되고 있는 최신 IT 기술 및 오픈소스 트렌드를 분석해 뉴스레터 형태로 작성해 주세요.
 
     [필수 제약 조건]
-    1. 분석 범위: 지난 24시간 이내의 데이터만 포함하고, 각 항목마다 반드시 **참고한 소스 링크(URL)**를 포함하세요.
-    2. 메일 전용 포맷: 인사말 없이 곧바로 [제목]부터 출력하세요.
-    3. 무조건적인 솔직함: 기술의 한계점과 단점을 냉정하게 지적하세요.
-    4. 가독성: 마크다운 문법을 활용하여 볼드 가공과 줄바꿈을 확실히 하세요.
-    5. 기준 일시 명시: 제목에 분석 기준 시점({today_str})을 포함하세요.
+    1. 팩트 체크: 절대 가상의 기술이나 미래의 허구 소식을 지어내지 마세요. 반드시 검색 결과에 존재하는 실제 최신 뉴스만 포함하세요.
+    2. 소스 링크: 각 항목마다 반드시 검색 결과에서 확인된 **실제 참고 소스 링크(URL)**를 포함하세요.
+    3. 분석 범위: 지난 24시간 이내의 데이터만 포함하세요.
+    4. 메일 전용 포맷: 인사말 없이 곧바로 [제목]부터 출력하세요.
+    5. 무조건적인 솔직함: 기술의 한계점과 단점을 냉정하게 지적하세요.
+    6. 가독성: 마크다운 문법을 활용하여 볼드 가공과 줄바꿈을 확실히 하세요.
 
     [출력 양식]
-    제목: 🚀 [Tech Pulse] {today_str} 기준 지난 24시간 테크 리포트 (Powered by 2.5 Pro)
+    제목: 🚀 [Tech Pulse] {today_str} 기준 지난 24시간 실시간 테크 리포트
     ---
     ### 짚고 넘어가야 할 최신 기술 3선
     ■ 1. [기술명]
@@ -59,9 +61,13 @@ def generate_newsletter():
     ■ 5. 오늘의 테크 용어 사전
     """
 
+    # [수정] Google Search Grounding 도구를 명시적으로 활성화합니다.
     response = client.models.generate_content(
         model=target_model_name,
-        contents=prompt
+        contents=prompt,
+        config=types.GenerateContentConfig(
+            tools=[types.Tool(google_search=types.GoogleSearchRetrieval())]
+        )
     )
     return response.text
 
