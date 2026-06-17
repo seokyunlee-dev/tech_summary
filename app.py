@@ -20,13 +20,13 @@ def generate_newsletter():
     print(f"Available models: {available_models}")
     
     # 가장 적합한 모델 선택 (1.5-flash 우선, 없으면 첫 번째 gemini 모델)
-    target_model = "gemini-1.5-flash"
-    if target_model not in [m.replace("models/", "") for m in available_models]:
+    target_model_name = "models/gemini-1.5-flash"
+    if target_model_name not in available_models:
         # 목록에서 'gemini'가 포함된 모델 중 가장 최신인 듯한 것 선택
         gemini_models = [m for m in available_models if "gemini" in m.lower()]
         if gemini_models:
-            target_model = gemini_models[0].replace("models/", "")
-            print(f"Target model '{target_model}' not found in list. Falling back to: {target_model}")
+            target_model_name = gemini_models[0]
+            print(f"Target model not found. Falling back to: {target_model_name}")
         else:
             print("No Gemini models found at all. Please check your API key.")
     
@@ -61,7 +61,7 @@ def generate_newsletter():
     """
 
     response = client.models.generate_content(
-        model="gemini-1.5-flash",
+        model=target_model_name,
         contents=prompt
     )
     return response.text
