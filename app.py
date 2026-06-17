@@ -13,8 +13,8 @@ RECIPIENT_EMAIL = os.getenv("RECIPIENT_EMAIL")
 
 def generate_newsletter():
     genai.configure(api_key=GEMINI_API_KEY)
-    model = genai.GenerativeModel('gemini-1.5-pro')
-
+    model = genai.GenerativeModel('gemini-1.5-flash')
+    
     # 실행 시점의 현재 날짜와 시각을 가져옵니다.
     now = datetime.now()
     today_str = now.strftime('%Y년 %m월 %d일 %H:%M')
