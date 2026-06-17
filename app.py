@@ -14,6 +14,22 @@ RECIPIENT_EMAIL = os.getenv("RECIPIENT_EMAIL")
 def generate_newsletter():
     client = genai.Client(api_key=GEMINI_API_KEY)
     
+    # [추가] 사용 가능한 모델 목록 확인 및 로깅
+    print("Checking available models...")
+    available_models = [m.name for m in client.models.list()]
+    print(f"Available models: {available_models}")
+    
+    # 가장 적합한 모델 선택 (1.5-flash 우선, 없으면 첫 번째 gemini 모델)
+    target_model = "gemini-1.5-flash"
+    if target_model not in [m.replace("models/", "") for m in available_models]:
+        # 목록에서 'gemini'가 포함된 모델 중 가장 최신인 듯한 것 선택
+        gemini_models = [m for m in available_models if "gemini" in m.lower()]
+        if gemini_models:
+            target_model = gemini_models[0].replace("models/", "")
+            print(f"Target model '{target_model}' not found in list. Falling back to: {target_model}")
+        else:
+            print("No Gemini models found at all. Please check your API key.")
+    
     # 실행 시점의 현재 날짜와 시각을 가져옵니다.
     now = datetime.now()
     today_str = now.strftime('%Y년 %m월 %d일 %H:%M')
