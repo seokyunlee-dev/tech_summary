@@ -1,9 +1,11 @@
 import os
+import time
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from google import genai
 from google.genai import types
+from google.genai.errors import ServerError
 from datetime import datetime
 
 # 1. 환경 변수 로드 (GitHub Secrets 사용 전제)
@@ -61,15 +63,33 @@ def generate_newsletter():
     ■ 5. 오늘의 테크 용어 사전
     """
 
-    # [수정] Google Search Grounding 도구를 명시적으로 활성화합니다.
-    response = client.models.generate_content(
-        model=target_model_name,
-        contents=prompt,
-        config=types.GenerateContentConfig(
-            tools=[types.Tool(google_search=types.GoogleSearchRetrieval())]
-        )
-    )
-    return response.text
+    # Google Search Grounding 도구를 활성화하고, 503 에러 시 재시도합니다.
+    MAX_RETRIES = 3
+    RETRY_DELAYS = [30, 60, 120]  # 재시도 간격 (초): 30초 → 60초 → 120초
+
+    for attempt in range(1, MAX_RETRIES + 1):
+        try:
+            print(f"[Attempt {attempt}/{MAX_RETRIES}] Generating newsletter...")
+            response = client.models.generate_content(
+                model=target_model_name,
+                contents=prompt,
+                config=types.GenerateContentConfig(
+                    tools=[types.Tool(google_search=types.GoogleSearchRetrieval())]
+                )
+            )
+            print(f"[Attempt {attempt}] Success!")
+            return response.text
+        except ServerError as e:
+            if "503" in str(e) or "UNAVAILABLE" in str(e):
+                if attempt < MAX_RETRIES:
+                    wait = RETRY_DELAYS[attempt - 1]
+                    print(f"[Attempt {attempt}] 503 UNAVAILABLE - Retrying in {wait}s...")
+                    time.sleep(wait)
+                else:
+                    print(f"[Attempt {attempt}] 503 UNAVAILABLE - All retries exhausted. Giving up.")
+                    raise
+            else:
+                raise
 
 def send_email(content):
     msg = MIMEMultipart()
